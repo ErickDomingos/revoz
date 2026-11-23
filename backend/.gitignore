@@ -1,0 +1,9 @@
+voice_models/
+amostras/
+.venv/
+__pycache__/
+data/
+*.key
+*.mp3
+*.wav
+desktop.ini

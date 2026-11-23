@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+gTTS
+PyJWT
+argon2-cffi
+cryptography
+numpy
+soundfile
+edge-tts

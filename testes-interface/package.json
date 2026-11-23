@@ -1,0 +1,7 @@
+{
+  "name": "revoz-testes-interface",
+  "private": true,
+  "description": "Testes de interface do Revoz com Playwright, API falsa e webcam falsa",
+  "scripts": { "test": "node rodar.js" },
+  "devDependencies": { "playwright": "^1.48.0" }
+}

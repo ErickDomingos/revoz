@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#141311">
+<meta name="color-scheme" content="dark">
+<title>Revoz</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg?v=3" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<!-- Atkinson Hyperlegible: fonte criada pelo Braille Institute para pessoas com baixa visão -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<script>
+  // Aplica o tema antes de desenhar a página (sem piscar). "revoz" = cores novas; "classico" = azul.
+  try { document.documentElement.dataset.tema = JSON.parse(localStorage.getItem("ajuste:tema")) || "revoz"; }
+  catch { document.documentElement.dataset.tema = "revoz"; }
+  try { document.documentElement.dataset.texto = JSON.parse(localStorage.getItem("ajuste:texto")) || "normal"; }
+  catch { document.documentElement.dataset.texto = "normal"; }
+</script>
+<link rel="stylesheet" href="css/style.css">
+
+</head>
+<body data-estado="pronto">
+
+  <header class="topo">
+    <a class="marca" id="logo-inicio" href="#" aria-label="Revoz: ir para o início"><img src="icon.svg?v=3" alt="" width="36" height="36"><h1>Revoz</h1></a>
+    <div class="topo-acoes">
+      <p id="estado-servidor" data-estado="verificando" role="status">Verificando…</p>
+      <button id="btn-perfil" type="button" class="perfil-topo" hidden>
+        <span class="avatar" aria-hidden="true"></span>
+        <span class="perfil-nome"></span>
+      </button>
+      <button id="btn-emergencia" type="button" class="emergencia" aria-label="Emergência: tocar alarme e pedir ajuda">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2h.01"/></svg>
+        <span>Emergência</span>
+      </button>
+      <button id="btn-sair-topo" type="button" class="secundario sair" aria-label="Sair da conta" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg>
+        <span>Sair</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Faixa de fala: sempre visível, mostra o que o app está fazendo -->
+  <section id="barra-fala" aria-label="Fala">
+    <div class="onda" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="fala-textos">
+      <p id="status" role="status" aria-live="polite">Pronto</p>
+      <p id="selo-voz" class="selo"></p>
+    </div>
+    <div class="fala-acoes">
+      <button id="btn-baixar-fala" class="secundario" type="button" hidden>Baixar</button>
+      <button id="btn-enviar-fala" class="secundario" type="button" hidden>Enviar</button>
+    </div>
+  </section>
+
+  <main>
+    <!-- DIGITAR -->
+    <section id="painel-digitar" role="tabpanel" aria-labelledby="aba-digitar">
+      <label for="campo-texto">O que você quer dizer?</label>
+      <textarea id="campo-texto" rows="4" placeholder="Digite a frase e pressione Enter"></textarea>
+      <button id="btn-falar" class="principal">Falar</button>
+
+      <div id="prontas">
+        <h2>Frases prontas</h2>
+        <div id="prontas-categorias" class="chips categorias" aria-label="Categorias"></div>
+        <div id="prontas-frases" class="chips"></div>
+      </div>
+
+      <div id="recentes" hidden>
+        <div class="cabecalho-painel">
+          <h2>Recentes</h2>
+          <button id="btn-limpar-recentes" class="secundario">Limpar</button>
+        </div>
+        <div id="lista-recentes" class="chips"></div>
+      </div>
+    </section>
+
+    <!-- OLHAR -->
+    <section id="painel-olhar" role="tabpanel" aria-labelledby="aba-olhar" hidden>
+      <div class="cabecalho-painel">
+        <h2 id="titulo-olhar">Escolha uma categoria</h2>
+        <button id="btn-recalibrar" class="secundario">Recalibrar</button>
+      </div>
+      <p id="aviso-olhar" class="aviso" role="alert"></p>
+      <p id="precisao-olhar" class="ajuda" role="status"></p>
+      <div id="grade" aria-label="Frases prontas"></div>
+    </section>
+
+    <!-- VOZES -->
+    <section id="painel-vozes" role="tabpanel" aria-labelledby="aba-vozes" hidden>
+      <div class="cabecalho-painel">
+        <h2>Vozes</h2>
+        <button id="btn-atualizar-vozes" class="secundario">Atualizar</button>
+      </div>
+      <p class="ajuda">Escolha com qual voz o app fala. Use “Ouvir” para testar antes de usar.</p>
+      <div id="lista-vozes" class="lista"></div>
+      <p id="vozes-aviso" class="ajuda" hidden></p>
+
+      <!-- A voz própria (áudios + autorização) abre como uma tela dentro de Vozes -->
+      <div class="grupo bloco chamada">
+        <h3>Quer falar com a sua própria voz?</h3>
+        <p class="ajuda">Envie gravações antigas e assine a autorização. Depois do treino, a voz aparece aqui para você usar.</p>
+        <button class="secundario destaque" type="button" data-ir="consentimento">Usar a minha própria voz</button>
+      </div>
+    </section>
+
+
+    <!-- CONSENTIMENTO -->
+    <section id="painel-consentimento" role="tabpanel" aria-labelledby="aba-vozes" hidden>
+      <button class="voltar-tela" type="button" data-ir="vozes">← Vozes</button>
+      <h2>A sua própria voz</h2>
+      <p class="ajuda intro">A voz de uma pessoa é um dado biométrico, protegido pela LGPD. O app só cria e usa uma voz clonada com autorização registrada, e você pode desfazer essa autorização quando quiser.</p>
+
+      <div class="explicacoes">
+        <details>
+          <summary>O que é a voz clonada</summary>
+          <p>Com 10 a 30 minutos de gravações de uma pessoa falando, treinamos um modelo que imita o timbre dela. Depois, tudo o que for digitado ou escolhido no app pode sair com essa voz, em vez de uma voz sintética.</p>
+        </details>
+        <details>
+          <summary>O que acontece com os seus áudios</summary>
+          <ul>
+            <li>Ficam guardados criptografados (AES-256). Nem quem tem acesso ao disco do servidor consegue ouvi-los sem a chave.</li>
+            <li>Só a pessoa dona da voz e os responsáveis aprovados por ela veem a lista de áudios.</li>
+            <li>Para o treino, a equipe abre só os áudios que você autorizou. A cópia aberta é apagada quando o treino termina.</li>
+            <li>Você pode apagar qualquer áudio a qualquer momento. Recomendamos apagar depois que a voz estiver pronta.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Por que a autorização tem duas camadas</summary>
+          <p><strong>Camada 1, identidade:</strong> quem autoriza confirma a senha da conta, informa o nome completo e diz se é a dona da voz ou o responsável legal. Isso evita que alguém com o celular desbloqueado autorize no seu lugar.</p>
+          <p><strong>Camada 2, uso:</strong> você marca, item por item, para que os áudios podem ser usados. O app registra a versão do texto aceito e uma impressão digital (SHA-256) de cada áudio, então fica provado quais arquivos exatamente foram autorizados.</p>
+        </details>
+        <details>
+          <summary>Marca d'água e registro de uso</summary>
+          <p>Todo áudio gerado com a voz clonada leva uma marca inaudível que aponta para o registro daquela geração. Se o áudio for usado para enganar alguém, dá para provar que saiu deste app, quando e por qual conta. Cada uso fica registrado em Conta &gt; Ver atividade, sem o texto do que foi dito.</p>
+        </details>
+        <details>
+          <summary>Seus direitos</summary>
+          <ul>
+            <li><strong>Revogar:</strong> a voz clonada para de ser usada na hora. O app volta para a voz genérica.</li>
+            <li><strong>Revogar e apagar:</strong> além disso, apaga definitivamente os áudios e os modelos da voz.</li>
+            <li><strong>Baixar seus dados</strong> e <strong>excluir a conta:</strong> na aba Conta.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Para responsáveis</summary>
+          <p>Se a pessoa não consegue usar o app sozinha, um responsável (familiar ou cuidador) pode enviar os áudios e assinar como responsável legal. Para isso, a conta do responsável precisa de um vínculo aprovado pelo usuário (aba Conta &gt; Vínculos). Depois, escolha o usuário em "De quem é a voz?".</p>
+        </details>
+        <details>
+          <summary>Como escolher ou gravar bons áudios</summary>
+          <ul>
+            <li>Uma pessoa só falando: sem música, sem TV ao fundo, sem outras vozes.</li>
+            <li>Quanto mais limpo, melhor. Áudios de WhatsApp e vídeos caseiros servem, mas o ruído aparece na voz final.</li>
+            <li>Junte pelo menos 10 minutos, de preferência 15 a 30.</li>
+            <li>Cada arquivo pode ter até 25 MB. Para gravações longas, divida em partes ou use MP3.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Depois de assinar</summary>
+          <p>A equipe treina o modelo com os áudios autorizados, o que leva algumas horas. Quando ficar pronto, a voz aparece na aba Vozes. Toque em "Ouvir" para testar e em "Usar" para o app passar a falar com ela.</p>
+        </details>
+      </div>
+
+      <div id="minha-voz" class="grupo bloco">
+        <h3>Cadastrar a voz</h3>
+        <label for="mv-alvo">De quem é a voz?</label>
+        <select id="mv-alvo"></select>
+        <p id="mv-status" class="ajuda" role="status"></p>
+
+        <h4>1. Envie os áudios</h4>
+        <p class="ajuda">Envie gravações antigas da pessoa falando (WAV, MP3, OGG, FLAC, WEBM ou M4A, até 25 MB cada). Os arquivos são guardados criptografados.</p>
+        <input id="mv-arquivos" type="file" accept="audio/*" multiple>
+        <button id="mv-enviar" class="secundario" type="button">Enviar áudios</button>
+        <div id="mv-amostras" class="lista"></div>
+
+        <form id="mv-form" novalidate>
+          <h4>2. Quem autoriza (camada 1: identidade)</h4>
+          <label for="mv-nome">Nome completo de quem assina</label>
+          <input id="mv-nome" type="text" autocomplete="name" maxlength="120" required>
+          <label class="marcar"><input id="mv-identidade" type="checkbox"> <span id="mv-texto-identidade"></span></label>
+          <label for="mv-senha">Confirme sua senha</label>
+          <input id="mv-senha" type="password" autocomplete="current-password" required>
+
+          <h4>3. Para que o áudio pode ser usado (camada 2: uso)</h4>
+          <div id="mv-usos"></div>
+
+          <p id="mv-erro" class="aviso" role="alert"></p>
+          <button id="mv-assinar" class="principal" type="submit">Assinar consentimento</button>
+        </form>
+
+        <div id="mv-revogar" hidden>
+          <button id="mv-revogar-so" class="secundario" type="button">Revogar consentimento</button>
+          <button id="mv-revogar-tudo" class="secundario perigo" type="button">Revogar e apagar áudios e modelos</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- GUIA -->
+    <section id="painel-guia" role="tabpanel" aria-labelledby="aba-guia" hidden>
+      <h2>Guia do app</h2>
+      <p class="ajuda intro">Siga os passos na ordem. Cada um tem um atalho para a parte do app que ele explica.</p>
+
+      <ol class="guia">
+        <li class="passo" data-passo="conta">
+          <div class="passo-topo"><h3>Entre na sua conta</h3><span class="situacao"></span></div>
+          <p>A conta guarda a sua voz, as suas frases e as suas recentes, em qualquer aparelho. Se você cuida de alguém, crie a conta como "Responsável".</p>
+        </li>
+        <li class="passo">
+          <div class="passo-topo"><h3>Fale digitando</h3></div>
+          <p>Escreva a frase e toque em <strong>Falar</strong> ou aperte Enter. As frases que você usa aparecem em <strong>Recentes</strong>, para repetir com um toque.</p>
+          <button class="secundario" type="button" data-ir="digitar">Ir para Digitar</button>
+        </li>
+        <li class="passo" data-passo="generica">
+          <div class="passo-topo"><h3>Escolha a voz genérica</h3><span class="situacao"></span></div>
+          <p>Enquanto você não tem a sua própria voz, o app fala com uma voz sintética. Escolha a <strong>feminina</strong> ou a <strong>masculina</strong> e use <strong>Ouvir</strong> para comparar.</p>
+          <button class="secundario" type="button" data-ir="vozes">Ir para Vozes</button>
+        </li>
+        <li class="passo">
+          <div class="passo-topo"><h3>Fale com o olhar</h3></div>
+          <p>Para quem não consegue digitar. O app usa a câmera para saber para qual frase você está olhando.</p>
+          <ul>
+            <li>Luz de frente para o rosto, nunca uma janela atrás.</li>
+            <li>Câmera na altura dos olhos, a uns 50 a 70 cm do rosto.</li>
+            <li>Na calibração, siga o ponto azul só com os olhos, sem mexer a cabeça.</li>
+            <li>Primeiro escolha a categoria, depois a frase. Olhe para o botão até a barra encher.</li>
+            <li>Errou muito? Toque em <strong>Recalibrar</strong>. Se a pessoa ainda vira um pouco o rosto, use <strong>Com a cabeça</strong> em Ajustes: é bem mais preciso.</li>
+          </ul>
+          <button class="secundario" type="button" data-ir="olhar">Ir para Olhar</button>
+        </li>
+        <li class="passo" data-passo="frases">
+          <div class="passo-topo"><h3>Monte as suas frases</h3><span class="situacao"></span></div>
+          <p>Organize as frases que você mais usa em categorias (Saúde, Família, Respostas...). Elas aparecem no modo Olhar e em "Frases prontas" no Digitar. Em Ajustes também dá para mudar o tempo de olhar para selecionar.</p>
+          <button class="secundario" type="button" data-ir="ajustes">Ir para Ajustes</button>
+        </li>
+        <li class="passo" data-passo="consentimento">
+          <div class="passo-topo"><h3>Autorize a sua própria voz</h3><span class="situacao"></span></div>
+          <p>Envie gravações antigas da pessoa falando (10 a 30 minutos no total) e assine o consentimento. A equipe treina o modelo a partir desses áudios.</p>
+          <button class="secundario" type="button" data-ir="consentimento">Usar a minha própria voz</button>
+        </li>
+        <li class="passo" data-passo="clonada">
+          <div class="passo-topo"><h3>Use a voz clonada</h3><span class="situacao"></span></div>
+          <p>Quando o treino terminar, a voz aparece em Vozes. Toque em <strong>Usar</strong>. O aviso "Voz clonada" no topo confirma que deu certo.</p>
+          <button class="secundario" type="button" data-ir="vozes">Ir para Vozes</button>
+        </li>
+        <li class="passo">
+          <div class="passo-topo"><h3>Emergência</h3></div>
+          <p>O botão vermelho <strong>Emergência</strong> no topo (e o botão Emergência no modo Olhar) toca um alarme alto e repete "Preciso de ajuda" até alguém tocar em <strong>Parar alarme</strong>. Funciona mesmo sem internet. Fica registrado em Conta &gt; Ver atividade. Se não for necessário, dá para esconder o botão em Ajustes.</p>
+        </li>
+        <li class="passo">
+          <div class="passo-topo"><h3>Guarde ou envie uma fala</h3></div>
+          <p>Depois que o app falar, use <strong>Baixar</strong> no topo para salvar o áudio. No celular, <strong>Enviar</strong> abre o compartilhamento (WhatsApp, e-mail...). Áudios com a voz clonada levam a marca d'água.</p>
+        </li>
+        <li class="passo">
+          <div class="passo-topo"><h3>Cuide da sua privacidade</h3></div>
+          <p>Na aba Conta você vê quem usou a sua conta e a sua voz, aprova responsáveis, baixa os seus dados e pode excluir a conta.</p>
+          <button class="secundario" type="button" data-ir="conta">Ir para Conta</button>
+        </li>
+      </ol>
+
+      <h3 class="subtitulo">Problemas comuns</h3>
+      <div class="explicacoes">
+        <details>
+          <summary>O topo mostra "Offline"</summary>
+          <p>O servidor não respondeu. O app continua falando com a voz do navegador até a conexão voltar.</p>
+        </details>
+        <details>
+          <summary>Aparece "falta o consentimento da voz clonada"</summary>
+          <p>A autorização foi revogada ou ainda não foi assinada. Vá em Vozes <p>A autorização foi revogada ou ainda não foi assinada. Abra a aba Consentimento.</p>gt; Usar a minha própria voz.</p>
+        </details>
+        <details>
+          <summary>O olhar seleciona a frase errada</summary>
+          <p>Recalibre com mais luz no rosto, aumente o tempo de olhar em Ajustes ou use menos frases na grade.</p>
+        </details>
+        <details>
+          <summary>A voz demora para sair</summary>
+          <p>A voz clonada é gerada na hora e leva alguns segundos. Frases já faladas tocam na hora, porque o app guarda o áudio.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section id="painel-ajustes" role="tabpanel" aria-labelledby="aba-ajustes" hidden>
+      <h2>Ajustes</h2>
+
+      <div class="grupo">
+        <label for="ajuste-dwell" class="linha-label">
+          <span>Tempo olhando para selecionar</span>
+          <output id="saida-dwell" for="ajuste-dwell"></output>
+        </label>
+        <input type="range" id="ajuste-dwell" min="800" max="3000" step="100">
+        <p class="ajuda">Mais tempo evita seleções sem querer. Menos tempo deixa a escolha mais rápida.</p>
+      </div>
+
+      <div class="grupo">
+        <h3>Tamanho do texto</h3>
+        <div class="segmentado" role="radiogroup" aria-label="Tamanho do texto">
+          <label><input type="radio" name="ajuste-texto" value="normal"><span>Normal</span></label>
+          <label><input type="radio" name="ajuste-texto" value="grande"><span style="font-size:1.15em">Grande</span></label>
+          <label><input type="radio" name="ajuste-texto" value="muito-grande"><span style="font-size:1.3em">Muito grande</span></label>
+        </div>
+      </div>
+
+      <div class="grupo">
+        <h3>Velocidade da fala</h3>
+        <div class="segmentado" role="radiogroup" aria-label="Velocidade da fala">
+          <label><input type="radio" name="ajuste-velocidade" value="0.85"><span>Mais devagar</span></label>
+          <label><input type="radio" name="ajuste-velocidade" value="1"><span>Normal</span></label>
+          <label><input type="radio" name="ajuste-velocidade" value="1.15"><span>Mais rápido</span></label>
+        </div>
+        <p class="ajuda">Mais devagar ajuda quem escuta com dificuldade. A voz continua com o mesmo tom.</p>
+      </div>
+
+      <div class="grupo">
+        <label class="chave">
+          <span>Botão de emergência<br><span class="ajuda">Mostra o botão vermelho no topo e na grade do modo Olhar.</span></span>
+          <input type="checkbox" role="switch" id="ajuste-emergencia">
+        </label>
+      </div>
+
+      <div class="grupo">
+        <h3>Cores do app</h3>
+        <label class="marcar"><input type="radio" name="ajuste-tema" value="revoz"> <span>Revoz (grafite e verde)</span></label>
+        <label class="marcar"><input type="radio" name="ajuste-tema" value="classico"> <span>Clássico (azul)</span></label>
+      </div>
+
+      <div class="grupo">
+        <h3>Como apontar no modo Olhar</h3>
+        <label class="marcar"><input type="radio" name="ajuste-apontar" value="olhos">
+          <span><strong>Com os olhos</strong><br><span class="ajuda">Para quem só mexe os olhos. Precisa de boa luz no rosto e da calibração.</span></span></label>
+        <label class="marcar"><input type="radio" name="ajuste-apontar" value="cabeca">
+          <span><strong>Com a cabeça</strong><br><span class="ajuda">O nariz vira o cursor. Bem mais preciso, para quem ainda consegue virar um pouco o rosto.</span></span></label>
+      </div>
+
+      <div class="grupo" id="grupo-sensibilidade" hidden>
+        <label for="ajuste-sensibilidade" class="linha-label">
+          <span>Sensibilidade da cabeça</span>
+          <output id="saida-sensibilidade" for="ajuste-sensibilidade"></output>
+        </label>
+        <input type="range" id="ajuste-sensibilidade" min="50" max="250" step="10">
+        <p class="ajuda">Aumente se o ponto não chega nas bordas com um movimento pequeno do rosto.</p>
+      </div>
+
+      <div class="grupo">
+        <label class="chave">
+          <span>Mostrar o ponto do olhar</span>
+          <input type="checkbox" role="switch" id="ajuste-ponto">
+        </label>
+      </div>
+
+      <!-- Frases prontas por categoria, guardadas na conta (modos Olhar e Digitar) -->
+      <div class="grupo">
+        <h3>Frases prontas</h3>
+        <p class="ajuda">Até 8 categorias, com até 8 frases cada (uma por linha). No modo Olhar, a pessoa escolhe primeiro a categoria e depois a frase: com poucos botões por tela, cada um fica grande e fácil de acertar.</p>
+        <div id="editor-categorias"></div>
+        <div class="linha-botoes">
+          <button id="btn-nova-categoria" class="secundario" type="button">+ Nova categoria</button>
+          <button id="btn-frases-padrao" class="secundario" type="button">Voltar ao padrão</button>
+          <button id="btn-salvar-frases" class="secundario destaque" type="button">Salvar frases</button>
+        </div>
+        <p id="frases-msg" class="ajuda" role="status"></p>
+      </div>
+
+      <div class="grupo">
+        <h3>Servidor</h3>
+        <p id="info-servidor" class="ajuda"></p>
+        <button id="btn-testar" class="secundario">Testar conexão</button>
+      </div>
+    </section>
+    <!-- Conta: quem está usando, vínculos, privacidade e dados (LGPD) -->
+    <section id="painel-conta" role="tabpanel" aria-labelledby="aba-conta" hidden>
+      <h2>Conta</h2>
+
+      <div class="perfil">
+        <span id="conta-avatar" class="avatar" aria-hidden="true"></span>
+        <div>
+          <p id="info-nome" class="perfil-nome-grande"></p>
+          <p id="info-conta" class="perfil-email"></p>
+          <p id="info-papel" class="ajuda"></p>
+        </div>
+        <div class="perfil-acoes">
+          <button id="btn-editar-nome" class="secundario" type="button">Editar nome</button>
+          <button id="btn-sair" class="secundario" type="button">Sair</button>
+        </div>
+        <form id="form-nome" class="form-nome" hidden novalidate>
+          <label for="campo-nome">Seu nome</label>
+          <input id="campo-nome" type="text" autocomplete="name" maxlength="80" placeholder="Nome e sobrenome">
+          <div class="linha-botoes">
+            <button class="secundario destaque" type="submit">Salvar</button>
+            <button id="btn-cancelar-nome" class="secundario" type="button">Cancelar</button>
+          </div>
+        </form>
+        <p id="nome-msg" class="ajuda" role="status"></p>
+      </div>
+
+      <div class="grupo">
+        <h3>Seus dados</h3>
+        <p class="ajuda">Pela LGPD, você pode baixar tudo o que o app guarda sobre você ou apagar a conta.</p>
+        <!-- Fase 6: direitos do titular (LGPD) -->
+        <button id="btn-baixar-dados" class="secundario" type="button">Baixar meus dados</button>
+        <button id="btn-excluir-conta" class="secundario perigo" type="button">Excluir minha conta</button>
+        <form id="form-excluir" hidden novalidate>
+          <p class="ajuda">Isto apaga a conta, os áudios enviados e as vozes clonadas. Não dá para desfazer.</p>
+          <label for="excluir-senha">Confirme sua senha</label>
+          <input id="excluir-senha" type="password" autocomplete="current-password">
+          <button class="secundario perigo" type="submit">Excluir definitivamente</button>
+          <button id="btn-cancelar-exclusao" class="secundario" type="button">Cancelar</button>
+        </form>
+        <p id="conta-msg" class="ajuda" role="status"></p>
+      </div>
+
+      <div class="grupo">
+        <h3>Vínculos entre usuário e responsável</h3>
+        <p id="vinc-ajuda" class="ajuda"></p>
+        <form id="vinc-form" hidden novalidate>
+          <label for="vinc-email">E-mail da conta do usuário</label>
+          <input id="vinc-email" type="email" autocomplete="off">
+          <button class="secundario" type="submit">Pedir vínculo</button>
+        </form>
+        <p id="vinc-msg" class="ajuda" role="status"></p>
+        <div id="vinc-lista" class="lista"></div>
+      </div>
+
+      <div class="grupo">
+        <h3>Privacidade</h3>
+        <p class="ajuda">Veja quem usou a sua conta e a sua voz. O texto das frases nunca é registrado.</p>
+        <button id="btn-auditoria" class="secundario">Ver atividade</button>
+        <ol id="lista-auditoria" class="registro"></ol>
+      </div>
+
+    </section>
+
+  </main>
+
+  <nav class="abas" role="tablist" aria-label="Seções do app">
+    <button id="aba-digitar" role="tab" data-modo="digitar" aria-selected="true" aria-controls="painel-digitar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7 14h10"/></svg>
+      <span>Digitar</span>
+    </button>
+    <button id="aba-olhar" role="tab" data-modo="olhar" aria-selected="false" aria-controls="painel-olhar" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>Olhar</span>
+    </button>
+    <button id="aba-vozes" role="tab" data-modo="vozes" aria-selected="false" aria-controls="painel-vozes" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
+      <span>Vozes</span>
+    </button>
+    <button id="aba-conta" role="tab" data-modo="conta" aria-selected="false" aria-controls="painel-conta" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4"/><path d="M4.5 20c1.3-3.6 4.2-5.5 7.5-5.5s6.2 1.9 7.5 5.5"/></svg>
+      <span>Conta</span>
+    </button>
+    <button id="aba-ajustes" role="tab" data-modo="ajustes" aria-selected="false" aria-controls="painel-ajustes" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      <span>Ajustes</span>
+    </button>
+    <button id="aba-guia" role="tab" data-modo="guia" aria-selected="false" aria-controls="painel-guia" tabindex="-1">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.4M12 16.8h.01"/></svg>
+      <span>Guia</span>
+    </button>
+  </nav>
+
+  <div id="calibracao" hidden>
+    <p id="calibracao-texto">Olhe para o ponto azul enquanto ele se move. Tente não mexer a cabeça.</p>
+  </div>
+
+  <!-- Emergência: cobre a tela, com alarme e a frase de socorro repetindo -->
+  <div id="emergencia" role="alertdialog" aria-modal="true" aria-labelledby="emergencia-titulo" hidden>
+    <div class="emergencia-caixa">
+      <p class="emergencia-icone" aria-hidden="true">!</p>
+      <h2 id="emergencia-titulo">Preciso de ajuda</h2>
+      <p id="emergencia-hora"></p>
+      <button id="btn-parar-emergencia" type="button">Parar alarme<span class="barra"></span></button>
+    </div>
+  </div>
+  <div id="ponto-olhar" hidden></div>
+
+  <div id="login" role="dialog" aria-modal="true" aria-labelledby="login-titulo" hidden>
+    <form id="form-login" class="folha" novalidate>
+      <h2 id="login-titulo">Entrar</h2>
+      <div id="login-grupo-nome" hidden>
+        <label for="login-nome">Seu nome</label>
+        <input id="login-nome" type="text" autocomplete="name" maxlength="80" placeholder="Nome e sobrenome">
+      </div>
+      <label for="login-email">E-mail</label>
+      <input id="login-email" type="email" autocomplete="username" required>
+      <label for="login-senha">Senha</label>
+      <input id="login-senha" type="password" autocomplete="current-password" required>
+      <div id="login-papel" hidden>
+        <label for="login-tipo">Eu sou</label>
+        <select id="login-tipo">
+          <option value="paciente">Usuário (vou falar com o app)</option>
+          <option value="cuidador">Responsável (cuido de um usuário)</option>
+        </select>
+      </div>
+      <p id="login-erro" class="aviso" role="alert"></p>
+      <button id="login-enviar" class="principal" type="submit">Entrar</button>
+      <button id="login-alternar" class="secundario" type="button">Criar conta</button>
+    </form>
+  </div>
+
+  <div id="splash" aria-hidden="true">
+    <img src="icon.svg?v=3" alt="" width="96" height="96">
+    <p>Revoz</p>
+    <p class="slogan">Sua voz, de volta.</p>
+  </div>
+
+  <div id="boas-vindas" role="dialog" aria-modal="true" aria-labelledby="bv-titulo" hidden>
+    <div class="folha">
+      <h2 id="bv-titulo">Bem-vindo ao Revoz</h2>
+      <ul class="passos">
+        <li><strong>Digitar</strong>Escreva e o app fala com a sua voz.</li>
+        <li><strong>Olhar</strong>Escolha frases prontas só olhando para a tela (ou virando o rosto).</li>
+        <li><strong>Emergência</strong>O botão vermelho no topo toca um alarme e pede ajuda.</li>
+        <li><strong>Vozes</strong>Escolha a voz do app: feminina, masculina ou a sua própria.</li>
+        <li><strong>Guia</strong>O passo a passo para usar o app do melhor jeito.</li>
+      </ul>
+      <button id="btn-ver-guia" class="principal" type="button">Ver o guia</button>
+      <button id="btn-comecar" class="secundario" type="button">Começar agora</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

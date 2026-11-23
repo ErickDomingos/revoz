@@ -1,0 +1,30 @@
+<input id="texto" placeholder="Digite a frase" size="40">
+<button onclick="falar()">Falar</button>
+<p id="status"></p>
+
+<script>
+async function falar() {
+  const status = document.getElementById("status");
+  status.textContent = "Gerando áudio...";
+  try {
+    const resp = await fetch("http://127.0.0.1:8002/gerar-audio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        texto: document.getElementById("texto").value,
+        user_id: "teste"
+      })
+    });
+    if (!resp.ok) {
+      const erro = await resp.json();
+      status.textContent = "Erro: " + erro.detail;
+      return;
+    }
+    status.textContent = "Voz: " + (resp.headers.get("X-Voz") || "desconhecida");
+    const blob = await resp.blob();
+    new Audio(URL.createObjectURL(blob)).play();
+  } catch (e) {
+    status.textContent = "Falha ao conectar com a API: " + e;
+  }
+}
+</script>

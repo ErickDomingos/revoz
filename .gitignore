@@ -1,0 +1,15 @@
+# Nunca publicar: dados, chaves, modelos de voz e áudios
+backend/data/
+backend/voice_models/
+backend/amostras/
+*.key
+*.pth
+*.index
+*.wav
+*.mp3
+*.tar.gz
+# Ambientes e temporários
+**/.venv/
+**/__pycache__/
+**/node_modules/
+desktop.ini
