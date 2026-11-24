@@ -1,6 +1,6 @@
 // Configuração central: ajustem aqui, sem mexer no resto do código.
 
-export const API_URL = "https://doctors-pregnancy-rip-tax.trycloudflare.com";// Tempo máximo de espera pela geração da voz antes de cair no fallback.
+export const API_URL = "https://perhaps-confidential-shorts-nicole.trycloudflare.com";
 // Ajustem depois de medir o tempo real do RVC.
 export const TIMEOUT_API_MS = 120000;
 
