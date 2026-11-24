@@ -2,9 +2,8 @@
 
 **Sua voz, de volta.** O Revoz é um aplicativo web de comunicação aumentativa e alternativa (CAA) para pessoas que perderam a fala, como pessoas com ELA ou com sequelas de AVC. A pessoa escolhe o que dizer **digitando, tocando em frases prontas ou só olhando para a tela**, e o app fala em voz alta com uma voz genérica ou com a **própria voz da pessoa**, recriada por IA a partir de gravações.
 
-Trabalho em grupo da disciplina SCOM (2026), UNESP Sorocaba. Autores: **Érick Domingos da Silva** e **Leonardo de Lima Pereira**.
-
-- **App publicado:** [LINK DO GITHUB PAGES]
+Trabalho em grupo da disciplina SCOM (2026), UNESP Sorocaba, com o Prof. Dr. Leopoldo A. D. L. Filho. Autores: **Érick Domingos da Silva** e **Leonardo de Lima Pereira**.
+- **App publicado:**[https://erickdomingos.github.io/revoz/]
 - **Relatório técnico e plano de disseminação:** entregues à disciplina
 
 ## O que o app faz
